@@ -1,6 +1,7 @@
 ﻿using System.Collections;
 using System.Collections.Generic;
 using UnityEngine;
+using UnityEngine.UI;
 
 public class GameManager : MonoBehaviour
 {
@@ -8,6 +9,8 @@ public class GameManager : MonoBehaviour
     public GameSettingData gameData;
     public delegate void OnTouchEvent();
     public event OnTouchEvent OnTouch;
+
+    public Text scoreText;
 
     public bool isGameOver = false;
 

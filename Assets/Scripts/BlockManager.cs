@@ -14,15 +14,19 @@ public class BlockManager : MonoBehaviour
     GameObject currentBlock, preBlock;
     Dircetion currentDirection = Dircetion.x;
     Vector3 currentBlockScale;
+
+
     int currentBlockCount;
     float randomColorOffset;
     float randomBgColorOffset;
     Vector3 camOffset;
 
+    GameObject firstBlock;
 
     bool isTouched = false;
     bool enableTouch = true;
 
+    int perfectCount;
 
 
     private void Start()
@@ -41,30 +45,28 @@ public class BlockManager : MonoBehaviour
 
     void InitGame()
     {
+
         gameData = GameManager.instance.gameData;
         GameManager.instance.OnTouch += OnTouch;
         
         currentBlockScale = gameData.initialBlockScale;
-        currentBlockCount = 1;
+        currentBlockCount = 0;
         randomColorOffset = Random.Range(0f, gameData.colorPalette.Length - 1f);
         randomBgColorOffset = Random.Range(0f, gameData.colorPalette.Length - 1f);
 
         background.InitColor(GetCurrentColor(randomBgColorOffset), GetCurrentColor(randomBgColorOffset + 1));
-        currentBlock = SpawnBlock(currentBlockScale, Vector3.zero, GetCurrentColor(randomColorOffset));
-        //높이 계산해서 맞추기
-        camOffset = Camera.main.transform.position;
-        
+        currentBlock= preBlock = SpawnBlock(currentBlockScale, new Vector3(0f, -1f, 0f), GetCurrentColor(randomColorOffset));
+        firstBlock = currentBlock;
+
+        camOffset = Camera.main.gameObject.transform.position;
+  
     }
 
     IEnumerator OnUpdate()
     {
 
-
-
         while (GameManager.instance.isGameOver == false)
         {
-
-            if (currentBlock) preBlock = currentBlock;
 
             var spawnPos = new Vector3();
             var movePos = new Vector3();
@@ -90,6 +92,7 @@ public class BlockManager : MonoBehaviour
 
             background.SetColor(GetCurrentColor(randomBgColorOffset), GetCurrentColor(randomBgColorOffset + 1));
             currentBlock = SpawnBlock(currentBlockScale, spawnPos, GetCurrentColor(randomColorOffset));
+            GameManager.instance.scoreText.text = (currentBlockCount).ToString();
             currentBlockCount++;
             int loopTweenId = LeanTween.move(currentBlock, movePos, gameData.blockMoveTime).setLoopPingPong().uniqueId;
 
@@ -103,43 +106,128 @@ public class BlockManager : MonoBehaviour
             tempCurrentPos.y = preBlock.transform.position.y;
 
 
-            switch(CheckState(currentBlock, preBlock, currentDirection))
+            switch(CheckState(currentBlock, preBlock))
             {
                 case BlockState.perfect:
-                    Debug.Log("perfect!");
+                    OnBlockPerfect();
                     break;
                 case BlockState.good:
-                    Debug.Log("good!");
-                    currentBlock = CutBlock(currentBlock, preBlock.transform.position, currentDirection);
+                    OnBlockGood();
                     break;
                 case BlockState.fail:
-                    Debug.Log("fail!");
-                    GameManager.instance.isGameOver = true;
-
-                    break;
+                    OnGameOver();
+                    yield break;
             }
 
             MoveCam();
             currentDirection = (currentDirection == Dircetion.x)? Dircetion.z : Dircetion.x;
-            currentBlockScale = currentBlock.transform.localScale;
+
             yield return null;
         }
     }
 
+    void OnBlockGood()
+    {
+        perfectCount = 0;
+        currentBlock = CutBlock(currentBlock, preBlock.transform.position);
+        currentBlockScale = currentBlock.transform.localScale;
+        preBlock = currentBlock;
+    }
+    void OnBlockPerfect()
+    {
+        perfectCount++;
+        currentBlock.transform.position = new Vector3(preBlock.transform.position.x, currentBlock.transform.position.y, preBlock.transform.position.z);
+
+        WaveEffectManager.instance.PlayEffect(currentBlock, perfectCount);
+
+
+        if (perfectCount >= gameData.perfectCondition)
+        {
+            Vector3 targetBlockScale = currentBlock.transform.localScale;
+            bool blockScaleDirection;
+
+            if (currentDirection == Dircetion.x)
+            {
+                if (currentBlock.transform.localScale.x + gameData.perfectScale > gameData.initialBlockScale.x)
+                {
+                    targetBlockScale.x = gameData.initialBlockScale.x;
+                }
+                else targetBlockScale.x = currentBlock.transform.localScale.x + gameData.perfectScale;
+
+                blockScaleDirection = currentBlock.transform.position.x > 0;
+             
+            }
+            else
+            {
+                if (currentBlock.transform.localScale.z + gameData.perfectScale > gameData.initialBlockScale.z)
+                {
+                    targetBlockScale.z = gameData.initialBlockScale.z;
+                }
+                else targetBlockScale.z = currentBlock.transform.localScale.z + gameData.perfectScale;
+
+                blockScaleDirection = currentBlock.transform.position.z > 0;
+            }
+           
+           
+
+            var preBlockScale = currentBlockScale;
+            var preBlockPos = currentBlock.transform.position;
+            var targetBlockPos = preBlockPos + (currentBlockScale - targetBlockScale) / 2f *( blockScaleDirection? 1 : -1 );
+
+
+            var temObj = new GameObject();
+            temObj.transform.position = targetBlockPos;
+            temObj.transform.localScale = targetBlockScale;
+            preBlock = temObj;
+
+            var animationBlock = currentBlock;
+
+            currentBlockScale = targetBlockScale;
+            
+
+            LeanTween.value(0f, 1f, gameData.camMoveTime).setOnUpdate((float value) =>
+            {
+                animationBlock.transform.localScale = Vector3.Lerp(preBlockScale, targetBlockScale, value);
+                animationBlock.transform.position = Vector3.Lerp(preBlockPos, targetBlockPos, value);
+            }).setOnComplete(()=> {
+                Destroy(temObj);
+                preBlock = animationBlock;
+                    });
+        }
+    }
+    
+    void OnGameOver()
+    {
+        currentBlock.AddComponent<Rigidbody>();
+        GameManager.instance.isGameOver = true;
+
+        StartCoroutine(ShowEntireBlock());
+
+    }
+
     void MoveCam()
     {
-        //다른방법 고안
-        Camera cam = Camera.main;
-
-
-
+        
         var pos = currentBlock.transform.position;
-        var posValue = pos.x + pos.z;
-        Debug.Log(posValue);
-        //위아래 3
+        var posValue = (pos.x + pos.z) / gameData.initialBlockScale.x;
+
 
         enableTouch = false;
-        LeanTween.moveY(Camera.main.gameObject, camOffset.y + currentBlockCount - 1 - posValue/2f, gameData.camMoveTime).setEaseOutSine().setOnComplete(()=> { enableTouch = true; });
+        LeanTween.moveY(Camera.main.gameObject, camOffset.y + currentBlockCount - posValue * gameData.blockOffsetHeight, gameData.camMoveTime).setEaseOutSine().setOnComplete(()=> { enableTouch = true; });
+    }
+
+    IEnumerator ShowEntireBlock()
+    {
+        var mesh = firstBlock.GetComponent<Renderer>();
+
+        float speed = gameData.endingSpeed;
+        while (!mesh.isVisible)
+        {
+            Camera.main.orthographicSize += speed * Time.deltaTime;
+            speed += speed * Time.deltaTime;
+            yield return null;
+        }
+
     }
 
     GameObject SpawnBlock(Vector3 scale, Vector3 position, Color color)
@@ -153,7 +241,7 @@ public class BlockManager : MonoBehaviour
         return block;
     }
     
-    GameObject CutBlock(GameObject block, Vector3 targetPos, Dircetion dircetion)
+    GameObject CutBlock(GameObject block, Vector3 targetPos)
     {
 
         GameObject cutBlock = Instantiate(block, transform);
@@ -165,7 +253,7 @@ public class BlockManager : MonoBehaviour
 
         float distance = Vector2.Distance(new Vector2(blockPos.x, blockPos.z), new Vector2(targetPos.x, targetPos.z));
         
-        if(dircetion == Dircetion.x)
+        if(currentDirection == Dircetion.x)
         {
 
             block.transform.position = new Vector3( (targetPos.x + blockPos.x) / 2f, blockPos.y, blockPos.z);
@@ -192,18 +280,18 @@ public class BlockManager : MonoBehaviour
 
     }
     
-    BlockState CheckState(GameObject block, GameObject target, Dircetion dircetion)
+    BlockState CheckState(GameObject block, GameObject target)
     {
 
 
-        float dis = dircetion == Dircetion.x ? 
+        float dis = currentDirection == Dircetion.x ? 
             Mathf.Abs(block.transform.position.x - target.transform.position.x) 
             : Mathf.Abs(block.transform.position.z - target.transform.position.z);
 
         if (dis < gameData.minDistance) return BlockState.perfect;
         else
         {
-            float scale = dircetion == Dircetion.x ? block.transform.localScale.x : block.transform.localScale.z;
+            float scale = currentDirection == Dircetion.x ? block.transform.localScale.x : block.transform.localScale.z;
 
             if (scale > dis)
             {

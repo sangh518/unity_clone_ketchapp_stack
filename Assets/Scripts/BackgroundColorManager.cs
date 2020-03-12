@@ -30,7 +30,7 @@ public class BackgroundColorManager : MonoBehaviour
         texture.SetPixels(new Color[] { color1, color2 });
         texture.Apply();
         backgroundImage.texture = texture;
-        Debug.Log("init");
+
 
     }
 

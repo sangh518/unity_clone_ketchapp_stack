@@ -2,7 +2,7 @@
 using System;
 
 [CreateAssetMenu(fileName ="Block Spawn Data", menuName = "Data/Block Spawn Data")]
-public class GameSettingData : ScriptableObject, ISerializationCallbackReceiver
+public class GameSettingData : ScriptableObject
 {
     //초기 게임 세팅값
 
@@ -14,18 +14,10 @@ public class GameSettingData : ScriptableObject, ISerializationCallbackReceiver
     public Color[] colorPalette;
     public float deltaColor;
 
+    public float blockOffsetHeight = 3.95f;
+    public float endingSpeed = 20f;
 
-    //변수
+    public int perfectCondition = 8;
+    public float perfectScale = 0.5f;
 
-
-    
-
-
-
-    public void OnAfterDeserialize()
-    {
-
-    }
-
-    public void OnBeforeSerialize(){}
 }
