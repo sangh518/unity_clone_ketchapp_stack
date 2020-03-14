@@ -1,5 +1,5 @@
 fileFormatVersion: 2
-guid: 72abd8451e1fc7140b7f08efc9a5cee2
+guid: f7ff379da2e730d4e8707d741bab7895
 TrueTypeFontImporter:
   externalObjects: {}
   serializedVersion: 4
@@ -8,9 +8,9 @@ TrueTypeFontImporter:
   characterSpacing: 0
   characterPadding: 1
   includeFontData: 1
-  fontName: Noto Mono
+  fontName: Noto Sans
   fontNames:
-  - Noto Mono
+  - Noto Sans
   fallbackFontReferences: []
   customCharacters: 
   fontRenderingMode: 0

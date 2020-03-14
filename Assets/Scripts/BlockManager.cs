@@ -32,7 +32,7 @@ public class BlockManager : MonoBehaviour
     private void Start()
     {
         InitGame();
-        StartCoroutine(OnUpdate());
+        StartCoroutine(OnWaitForStart());
     }
 
 
@@ -55,11 +55,23 @@ public class BlockManager : MonoBehaviour
         randomBgColorOffset = Random.Range(0f, gameData.colorPalette.Length - 1f);
 
         background.InitColor(GetCurrentColor(randomBgColorOffset), GetCurrentColor(randomBgColorOffset + 1));
-        currentBlock= preBlock = SpawnBlock(currentBlockScale, new Vector3(0f, -1f, 0f), GetCurrentColor(randomColorOffset));
-        firstBlock = currentBlock;
+
+       
+
+        currentBlock = preBlock = SpawnBlock(currentBlockScale, new Vector3(0f, -1f, 0f), GetCurrentColor(randomColorOffset));
+        currentBlock.SetActive(false);
+
+        firstBlock = SpawnBlock(currentBlockScale + new Vector3(0f, 2f, 0f), new Vector3(0f, -2f, 0f), GetCurrentColor(randomColorOffset)); 
 
         camOffset = Camera.main.gameObject.transform.position;
   
+    }
+
+    IEnumerator OnWaitForStart()
+    {
+        while (!GameManager.instance.isGameStarted) yield return null;
+
+        StartCoroutine(OnUpdate());
     }
 
     IEnumerator OnUpdate()
@@ -92,7 +104,7 @@ public class BlockManager : MonoBehaviour
 
             background.SetColor(GetCurrentColor(randomBgColorOffset), GetCurrentColor(randomBgColorOffset + 1));
             currentBlock = SpawnBlock(currentBlockScale, spawnPos, GetCurrentColor(randomColorOffset));
-            GameManager.instance.scoreText.text = (currentBlockCount).ToString();
+            UIManager.instance.SetScoreText(currentBlockCount.ToString());
             currentBlockCount++;
             int loopTweenId = LeanTween.move(currentBlock, movePos, gameData.blockMoveTime).setLoopPingPong().uniqueId;
 

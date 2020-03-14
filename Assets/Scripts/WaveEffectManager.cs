@@ -50,7 +50,6 @@ public class WaveEffectManager : MonoBehaviour
         var defaultEffect = PopFromPool();
         defaultEffect.transform.position = target.transform.position - new Vector3(0, 0.5f, 0f);
         var targetScale = target.transform.localScale;
-        Debug.Log(targetScale);
         defaultEffect.transform.localScale = new Vector3(effectWidth*2 + targetScale.x, effectWidth*2 + targetScale.z, 1f);
 
         var mat = defaultEffect.GetComponent<Renderer>().material;
@@ -83,7 +82,6 @@ public class WaveEffectManager : MonoBehaviour
                 multiMat.SetFloat("_LineWidth", (multiEffectCount - i + 1f) / multiEffectCount * effectWidth);
 
                 var leftTime = (multiEffectCount - i + 1f) / multiEffectCount * effectDuration;
-                Debug.Log(leftTime);
 
                 LeanTween.value(1f, 0f, leftTime).setOnUpdate((float value) =>
                 {
