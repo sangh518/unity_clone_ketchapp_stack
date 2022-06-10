@@ -5,14 +5,14 @@ using UnityEngine;
 public class BlockManager : MonoBehaviour
 {
     
-    enum Dircetion { x, z }
+    enum Direction { x, z }
     enum BlockState { perfect, good, fail}
 
     GameSettingData gameData;
     public BackgroundColorManager background;
 
     GameObject currentBlock, preBlock;
-    Dircetion currentDirection = Dircetion.x;
+    Direction currentDirection = Direction.x;
     Vector3 currentBlockScale;
 
 
@@ -83,7 +83,7 @@ public class BlockManager : MonoBehaviour
             var spawnPos = new Vector3();
             var movePos = new Vector3();
 
-            if (currentDirection == Dircetion.x)
+            if (currentDirection == Direction.x)
             {
                 spawnPos.x = -gameData.blockSpawnDistance + preBlock.transform.position.x;
                 spawnPos.y = currentBlockCount;
@@ -132,7 +132,7 @@ public class BlockManager : MonoBehaviour
             }
 
             MoveCam();
-            currentDirection = (currentDirection == Dircetion.x)? Dircetion.z : Dircetion.x;
+            currentDirection = (currentDirection == Direction.x)? Direction.z : Direction.x;
 
             yield return null;
         }
@@ -158,7 +158,7 @@ public class BlockManager : MonoBehaviour
             Vector3 targetBlockScale = currentBlock.transform.localScale;
             bool blockScaleDirection;
 
-            if (currentDirection == Dircetion.x)
+            if (currentDirection == Direction.x)
             {
                 if (currentBlock.transform.localScale.x + gameData.perfectScale > gameData.initialBlockScale.x)
                 {
@@ -265,7 +265,7 @@ public class BlockManager : MonoBehaviour
 
         float distance = Vector2.Distance(new Vector2(blockPos.x, blockPos.z), new Vector2(targetPos.x, targetPos.z));
         
-        if(currentDirection == Dircetion.x)
+        if(currentDirection == Direction.x)
         {
 
             block.transform.position = new Vector3( (targetPos.x + blockPos.x) / 2f, blockPos.y, blockPos.z);
@@ -296,14 +296,14 @@ public class BlockManager : MonoBehaviour
     {
 
 
-        float dis = currentDirection == Dircetion.x ? 
+        float dis = currentDirection == Direction.x ? 
             Mathf.Abs(block.transform.position.x - target.transform.position.x) 
             : Mathf.Abs(block.transform.position.z - target.transform.position.z);
 
         if (dis < gameData.minDistance) return BlockState.perfect;
         else
         {
-            float scale = currentDirection == Dircetion.x ? block.transform.localScale.x : block.transform.localScale.z;
+            float scale = currentDirection == Direction.x ? block.transform.localScale.x : block.transform.localScale.z;
 
             if (scale > dis)
             {
